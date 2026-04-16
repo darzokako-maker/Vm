@@ -1,0 +1,22 @@
+name: Build-Stealth-Environment
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Compile Stealth EXE
+        run: |
+          cl.exe /EHsc /O2 /Fe:YahyaStealth.exe main.cpp user32.lib gdi32.lib shell32.lib
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yahya_Stealth_Package
+          path: YahyaStealth.exe
+          
