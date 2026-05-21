@@ -1,22 +1,30 @@
-name: Build-Stealth-Environment
-on: [push]
+name: Android Custom Menu Build
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+    - name: Kodu Depodan Cek
+      uses: actions/checkout@v4
 
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+    - name: Android NDK Ortamini Kur
+      uses: nndst/setup-ndk@v1
+      with:
+        ndk-version: r25c
 
-      - name: Compile Stealth EXE
-        run: |
-          cl.exe /EHsc /O2 /Fe:YahyaStealth.exe main.cpp user32.lib gdi32.lib shell32.lib
+    - name: ndk-build ile Derleme Islemini Baslat
+      run: |
+        ndk-build -C ./jni
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Yahya_Stealth_Package
-          path: YahyaStealth.exe
-          
+    - name: Derlenen .so Dosyalarini Yukle
+      uses: actions/upload-artifact@v4
+      with:
+        name: Polyfield-OzelMenu-Libs
+        path: libs/
+        
