@@ -1,9 +1,8 @@
-#define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
-#include <windows.h>
 #include <ws2tcpip.h>
+#include <windows.h>
+#include <objidl.h> // IStream ve PROPID tanımlarının düzgün yüklenmesi için gerekli
 #include <gdiplus.h>
-#include <objidl.h>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -55,7 +54,7 @@ std::vector<char> CaptureScreenJPEG() {
     BitBlt(hMemoryDC, 0, 0, width, height, hScreenDC, x1, y1, SRCCOPY);
 
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-    ULONG_ptr gdiplusToken;
+    ULONG_PTR gdiplusToken; // ULONG_ptr yerine standart ULONG_PTR yapıldı
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
     {
