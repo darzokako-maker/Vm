@@ -1,30 +1,29 @@
-name: Android Custom Menu Build
+name: Build Screen Share Server
 
 on:
   push:
+    branches: [ "main" ]
+  pull_request:
     branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
-    - name: Kodu Depodan Cek
+    - name: Depoyu Indir
       uses: actions/checkout@v4
 
-    - name: Android NDK Ortamini Kur
-      uses: nndst/setup-ndk@v1
-      with:
-        ndk-version: r25c
+    - name: MSVC Derleyici Ortamini Kur
+      uses: ilammy/msvc-dev-cmd@v1
 
-    - name: ndk-build ile Derleme Islemini Baslat
+    - name: C++ Kodunu Derle
       run: |
-        ndk-build -C ./jni
+        cl.exe /EHsc main.cpp /Fe:ScreenShareServer.exe gdiplus.lib ws2_32.lib user32.lib gdi32.lib ole32.lib
 
-    - name: Derlenen .so Dosyalarini Yukle
+    - name: Exe Dosyasini Yukle (Artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: Polyfield-OzelMenu-Libs
-        path: libs/
-        
+        name: ScreenShareServer
+        path: ScreenShareServer.exe
