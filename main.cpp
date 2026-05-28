@@ -14,7 +14,7 @@
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "ole32.lib")
 
-// Tarayıcıdan gelen URL kodlu (URL encoded) metinleri çözen yardımcı fonksiyon
+// Tarayıcıdan gelen URL kodlu metinleri çözen yardımcı fonksiyon
 std::wstring UrlDecodeAndConvert(const std::string& str) {
     std::string decoded = "";
     for (size_t pos = 0; pos < str.length(); pos++) {
@@ -34,7 +34,6 @@ std::wstring UrlDecodeAndConvert(const std::string& str) {
         }
     }
     
-    // Çözülen UTF-8 dizesini Windows'un Unicode (wchar_t) formatına dönüştürüyoruz
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, &decoded[0], (int)decoded.size(), NULL, 0);
     std::wstring wstrTo(size_needed, 0);
     MultiByteToWideChar(CP_UTF8, 0, &decoded[0], (int)decoded.size(), &wstrTo[0], size_needed);
@@ -49,10 +48,8 @@ void SimulateKeyboardInput(const std::wstring& text) {
         input.ki.dwFlags = KEYEVENTF_UNICODE;
         input.ki.wScan = ch;
         
-        // Tuşa basış (Key Down)
         SendInput(1, &input, sizeof(INPUT));
         
-        // Tuşu bırakış (Key Up)
         input.ki.dwFlags |= KEYEVENTF_KEYUP;
         SendInput(1, &input, sizeof(INPUT));
     }
@@ -241,7 +238,7 @@ int main() {
             recvbuf[iResult] = '\0';
             std::string request(recvbuf);
 
-            // Klavye komutlarını işleme (Yazı Gönderme ve Tuş Tetikleme)
+            // Klavye komutlarını işleme
             if (request.find("GET /keyboard") != std::string::npos) {
                 size_t text_pos = request.find("text=");
                 size_t key_pos = request.find("key=");
@@ -289,7 +286,7 @@ int main() {
                 std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
                 send(clientSocket, response.c_str(), (int)response.length(), 0);
             }
-            // Ana sayfa isteği (HTML, Klavye Kontrolleri ve Javascript)
+            // Ana sayfa isteği
             else if (request.find("GET / ") != std::string::npos || request.find("GET /index.html") != std::string::npos) {
                 std::string html = 
                     "HTTP/1.1 200 OK\r\n"
@@ -298,171 +295,7 @@ int main() {
                     "<!DOCTYPE html>"
                     "<html>"
                     "<head>"
-                    "<title>PC Ekran Izleme ve Kontrol</title>"
+                    "<title>PC Ekran Izleme ve Kontrol (5 FPS)</title>"
                     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
                     "<style>"
-                    "body { font-family: sans-serif; text-align: center; background: #1e1e1e; color: #fff; margin: 0; padding: 10px; user-select: none; }"
-                    "img { max-width: 100%; height: auto; border: 2px solid #444; margin-top: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); cursor: crosshair; touch-action: none; }"
-                    "button { padding: 10px 15px; font-size: 14px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; transition: 0.2s; }"
-                    "button:hover { background: #0056b3; }"
-                    ".btn-off { background: #dc3545; }"
-                    ".btn-off:hover { background: #bd2130; }"
-                    ".btn-on { background: #28a745; }"
-                    ".btn-on:hover { background: #218838; }"
-                    ".kbd-area { background: #2d2d2d; padding: 15px; margin-top: 10px; border-radius: 8px; border: 1px solid #444; }"
-                    ".input-text { padding: 10px; width: 60%; font-size: 14px; border-radius: 5px; border: 1px solid #555; background: #444; color: #fff; margin-right: 5px; }"
-                    "</style>"
-                    "</head>"
-                    "<body>"
-                    "<h1>PC Uzaktan Kontrol Paneli</h1>"
-                    "<div>"
-                    "  <button id=\"toggleCursor\" class=\"btn-on\">Imleci Goster: ACIK</button>"
-                    "  <button id=\"toggleControl\" class=\"btn-off\">Kontrol Modu: KAPALI</button>"
-                    "</div>"
-                    
-                    "<!-- Klavye Kontrol Paneli -->"
-                    "<div class=\"kbd-area\">"
-                    "  <h3>Uzaktan Klavye</h3>"
-                    "  <input type=\"text\" id=\"kbdInput\" class=\"input-text\" placeholder=\"Yazilacak metni girin...\">"
-                    "  <button id=\"sendTextBtn\">Gonder</button>"
-                    "  <br>"
-                    "  <button id=\"pressEnterBtn\" style=\"background:#fd7e14;\">Enter Bas</button>"
-                    "  <button id=\"pressBackBtn\" style=\"background:#6c757d;\">Sil (Backspace)</button>"
-                    "  <button id=\"clearLocalBtn\" style=\"background:#dc3545;\">Kutuyu Temizle</button>"
-                    "</div>"
-
-                    "<br>"
-                    "<img id=\"screen\" src=\"/screenshot?show_cursor=1\" alt=\"Ekran Yukleniyor...\">"
-                    
-                    "<script>"
-                    "const img = document.getElementById('screen');"
-                    "const cursorBtn = document.getElementById('toggleCursor');"
-                    "const controlBtn = document.getElementById('toggleControl');"
-                    "const kbdInput = document.getElementById('kbdInput');"
-                    "const sendTextBtn = document.getElementById('sendTextBtn');"
-                    "const pressEnterBtn = document.getElementById('pressEnterBtn');"
-                    "const pressBackBtn = document.getElementById('pressBackBtn');"
-                    "const clearLocalBtn = document.getElementById('clearLocalBtn');"
-                    
-                    "let showCursor = true;"
-                    "let controlEnabled = false;"
-                    "let intervalId = null;"
-                    
-                    "function updateImg() {"
-                    "  const cursorParam = showCursor ? '1' : '0';"
-                    "  img.src = '/screenshot?show_cursor=' + cursorParam + '&t=' + Date.now();"
-                    "}"
-                    
-                    "cursorBtn.addEventListener('click', () => {"
-                    "  showCursor = !showCursor;"
-                    "  if (showCursor) {"
-                    "    cursorBtn.textContent = 'Imleci Goster: ACIK';"
-                    "    cursorBtn.className = 'btn-on';"
-                    "  } else {"
-                    "    cursorBtn.textContent = 'Imleci Goster: KAPALI';"
-                    "    cursorBtn.className = 'btn-off';"
-                    "  }"
-                    "  updateImg();"
-                    "});"
-                    
-                    "controlBtn.addEventListener('click', () => {"
-                    "  controlEnabled = !controlEnabled;"
-                    "  if (controlEnabled) {"
-                    "    controlBtn.textContent = 'Kontrol Modu: ACIK (Tikla/Dokun)';"
-                    "    controlBtn.className = 'btn-on';"
-                    "  } else {"
-                    "    controlBtn.textContent = 'Kontrol Modu: KAPALI';"
-                    "    controlBtn.className = 'btn-off';"
-                    "  }"
-                    "});"
-                    
-                    "img.addEventListener('pointerdown', (e) => {"
-                    "  if (!controlEnabled) return;"
-                    "  e.preventDefault();"
-                    "  const rect = img.getBoundingClientRect();"
-                    "  const x = e.clientX - rect.left;"
-                    "  const y = e.clientY - rect.top;"
-                    "  const rx = (x / rect.width).toFixed(4);"
-                    "  const ry = (y / rect.height).toFixed(4);"
-                    "  fetch(`/click?rx=${rx}&ry=${ry}`).then(() => {"
-                    "    setTimeout(updateImg, 100);"
-                    "  });"
-                    "});"
-
-                    "// Klavye Islemleri"
-                    "sendTextBtn.addEventListener('click', () => {"
-                    "  const val = kbdInput.value;"
-                    "  if (val.length > 0) {"
-                    "    fetch('/keyboard?text=' + encodeURIComponent(val)).then(() => {"
-                    "      kbdInput.value = '';" // Metin gonderildikten sonra kutuyu bosalt
-                    "      setTimeout(updateImg, 150);"
-                    "    });"
-                    "  }"
-                    "});"
-                    
-                    "pressEnterBtn.addEventListener('click', () => {"
-                    "  fetch('/keyboard?key=enter').then(() => {"
-                    "    setTimeout(updateImg, 150);"
-                    "  });"
-                    "});"
-                    
-                    "pressBackBtn.addEventListener('click', () => {"
-                    "  fetch('/keyboard?key=backspace').then(() => {"
-                    "    setTimeout(updateImg, 150);"
-                    "  });"
-                    "});"
-
-                    "clearLocalBtn.addEventListener('click', () => {"
-                    "  kbdInput.value = '';"
-                    "});"
-                    
-                    "// Enter tusu ile doğrudan metin gönderme kolaylığı"
-                    "kbdInput.addEventListener('keypress', (e) => {"
-                    "  if (e.key === 'Enter') {"
-                    "    sendTextBtn.click();"
-                    "  }"
-                    "});"
-
-                    "intervalId = setInterval(updateImg, 1000);"
-                    "</script>"
-                    "</body>"
-                    "</html>";
-                send(clientSocket, html.c_str(), (int)html.length(), 0);
-            } 
-            // Ekran görüntüsü görsel isteği
-            else if (request.find("GET /screenshot") != std::string::npos) {
-                bool drawCursor = true;
-                if (request.find("show_cursor=0") != std::string::npos) {
-                    drawCursor = false;
-                }
-                
-                std::vector<char> jpegData = CaptureScreenJPEG(drawCursor);
-                std::string headers = 
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: image/jpeg\r\n"
-                    "Content-Length: " + std::to_string(jpegData.size()) + "\r\n"
-                    "Connection: close\r\n\r\n";
-                
-                send(clientSocket, headers.c_str(), (int)headers.length(), 0);
-                if (!jpegData.empty()) {
-                    int totalSent = 0;
-                    int size = (int)jpegData.size();
-                    while (totalSent < size) {
-                        int sent = send(clientSocket, jpegData.data() + totalSent, size - totalSent, 0);
-                        if (sent == SOCKET_ERROR) break;
-                        totalSent += sent;
-                    }
-                }
-            }
-            else {
-                std::string response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-                send(clientSocket, response.c_str(), (int)response.length(), 0);
-            }
-        }
-        closesocket(clientSocket);
-    }
-
-    closesocket(listenSocket);
-    WSACleanup();
-    return 0;
-}
+                    "body { font-family: sans-serif; text-align: center; background: #1
