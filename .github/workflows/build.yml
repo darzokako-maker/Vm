@@ -1,29 +1,41 @@
-name: Build Screen Share Server
+name: Build Blink EXE
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ] # main veya master branch'ine kod yüklendiğinde tetiklenir
   pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # İstediğin zaman GitHub arayüzünden elle de başlatabilmen için
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-latest # Windows üzerinde derleme yapıyoruz ki Windows uyumlu EXE versin
 
     steps:
-    - name: Depoyu Indir
+    - name: Depoyu Klonla
       uses: actions/checkout@v4
 
-    - name: MSVC Derleyici Ortamini Kur
-      uses: ilammy/msvc-dev-cmd@v1
+    - name: Python Kurulumu
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10' # Kararlı bir Python sürümü
 
-    - name: C++ Kodunu Derle
+    - name: Gerekli Kütüphaneleri Yükle
       run: |
-        cl.exe /EHsc main.cpp /Fe:ScreenShareServer.exe gdiplus.lib ws2_32.lib user32.lib gdi32.lib ole32.lib
+        python -m pip install --upgrade pip
+        pip install keyboard pyinstaller
 
-    - name: Exe Dosyasini Yukle (Artifact)
+    - name: PyInstaller ile EXE'ye Dönüştür
+      run: |
+        # --onefile: Tek bir bağımsız .exe dosyası üretir.
+        # --noconsole: Arka planda siyah CMD ekranı açılmasını engeller (isteğe bağlıdır, 
+        # eğer print çıktılarını görmek istiyorsan bu parametreyi silebilirsin).
+        # --uac-admin: Programın otomatik olarak "Yönetici Olarak Çalıştır" yetkisi istemesini sağlar (bu betik için şarttır).
+        pyinstaller --onefile --uac-admin main.py
+
+    - name: Oluşturulan EXE'yi GitHub'a Yükle (Artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: ScreenShareServer
-        path: ScreenShareServer.exe
+        name: Minecraft-Blink-EXE
+        path: dist/main.exe
+        
